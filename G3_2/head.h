@@ -20,12 +20,12 @@ typedef struct sockaddr SA;
 enum CMD{
     LOGIN,  //登录
     STAFF_CHANGE_PASSWD,//修改密码
-    STAFF_QUERY,        //退出
+    STAFF_QUERY,        //员工查询
     ADMIN_ADD_STAFF,    //管理员增加员工
     ADMIN_DEL_STAFF,    //管理员删除员工
-    ADMIN_QUERY,       //管理员退出
-    SUCCESS,           //成功
-    FAILED            //失败
+    ADMIN_QUERY,        //管理员查询
+    QUIT ,            //退出
+    FAILED              //失败
 };
 
 enum USER_LEVEL{

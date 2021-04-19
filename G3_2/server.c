@@ -93,12 +93,12 @@ void do_admin_query(int sockfd, MSG *pbuf)
 	else
 	{
 	    char *errmsg;
-	    char sql[64] = {'\0'};
+	    char cmd[256];
 	    char **user_msg;
 	    int  nrow,ncolumn;
-	    sprintf(sql,"select from data where name = %s",pbuf->data);
+	    sprintf(cmd,"select from data where name = %s",pbuf->data);
 
-        if( sqlite3_get_table(db,sql,&user_msg,&nrow,&ncolumn,&errmsg) != SQLITE_OK)
+        if( sqlite3_get_table(db,cmd,&user_msg,&nrow,&ncolumn,&errmsg) != SQLITE_OK)
   	    {
 		    //查询成功 ret = 0，查询到的信息保存在user_msg中
 		    //数据库顺序： name,passwd,id,trueName,addr,age,salary,level 
@@ -120,6 +120,61 @@ void do_admin_query(int sockfd, MSG *pbuf)
         //发送 info
 	    send(sockfd,(void *)&pbuf,sizeof(MSG),0);
     }
+}
+
+void do_admin_add(int sockfd, MSG *pbuf)
+{
+	char *errmsg;
+	char cmd[256];
+	char **user_msg;
+	int nrow = 0,ncolumn = 0;
+	sprintf(cmd,"select from data where name = %s",pbuf->data);
+    sqlite3_get_table(db,cmd,&user_msg,&nrow,&ncolumn,&errmsg);
+  	if(nrow !=0 || ncolumn != 0)
+	{
+		pbuf->ret = -1;
+		strcpy(pbuf->data,"此用户名已被注册");
+	}
+	else
+	{
+	    sprintf(cmd,"insert into data values('%s','%s',%d,'%s',\
+					 '%s',%d,%f,%d",pbuf->data,pbuf->passwd,pbuf->info.id,\
+					 pbuf->info.name,pbuf->info.addr,pbuf->info.age,\
+					 pbuf->info.salary,pbuf->ret);
+		if(sqlite3_exec(db,cmd,NULL,NULL,&errmsg) == SQLITE_OK)
+		{
+			pbuf->ret = 0;
+			strcpy(pbuf->data,"添加成功");
+		}else
+		{
+		    pbuf->ret = -1;
+			strcpy(pbuf->data,"添加失败");
+		};
+	}
+	send(sockfd,(void *)&pbuf,sizeof(MSG),0);
+}
+
+void do_admin_del(int sockfd, MSG *pbuf)
+{
+	//查询data用户 从数据库删除
+	char *errmsg;
+	char cmd[256];
+	sprintf(cmd,"delete from data where name = '%s'",pbuf->data);
+	//数据库删除操作
+	if( sqlite3_exec(db,cmd,NULL,NULL,&errmsg) == SQLITE_OK)
+	{
+		//删除成功 ret = 0，data = “删除成功”
+		pbuf->ret = 0;
+		strcpy(pbuf->data,"删除成功");
+	}
+	else 
+	{
+		//删除失败 ret = -1, data = "删除失败“
+		pbuf->ret = 0;
+		strcpy(pbuf->data,"登陆成功");
+	}
+	//将登录的结果反馈给用户端
+	send(sockfd,(void *)&pbuf,sizeof(MSG),0);
 }
 
 void *handler(void * arg)
@@ -151,10 +206,10 @@ void *handler(void * arg)
                 do_admin_query(connfd, &msg);
                 break;
             case ADMIN_DEL_STAFF:
-//                do_admin_del(connfd, &msg);
+              do_admin_del(connfd, &msg);
                 break;
             case ADMIN_ADD_STAFF:
-//                do_admin_add(connfd, &msg);
+              do_admin_add(connfd, &msg);
                 break;
             default:
                 break;
