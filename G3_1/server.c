@@ -4,23 +4,58 @@ sqlite3 *db = NULL;  //数据库句柄
 
 void do_login(int sockfd, MSG *pbuf)
 {
-   
+	while(1)
+	{
+		recv(sockfd,pbuf,sizeof(pbuf),0);     //从数据库中取出用户名和从客户端发送过来的用户名进行比较
+		if(pbuf.name == ？？？)               //如果可以从数据库中查找到用户名 则进行下一步的passwd的比较
+		{
+			if(pbuf.passwd ==  ????)				//判断用户名和密码是否匹配
+			{
+				pbuf.ret = SUCCESS;
+				send(sockfd,pbuf,sizeof(pbuf),0);
+			}
+			else
+			{
+				pbuf.ret = FAILED;
+				send(sockfd,pbuf,sizeof(pbuf),0);
+			}
+		}
+		else
+		{
+			msg.ret = FAILED;			//如果查询用户失败，则返回FAILED
+			send(sockfd,pbuf,sizeof(pbuf),0);
+		}
+	}
 }
 
 void do_staff_change_passwd(int sockfd, MSG *pbuf)
 {
-   
+	
+		//	pubf.name == name;找到此用户登录的账号
+		//	在数据库中将这个用户的密码更改
+		pbuf.ret = SUCCESS;
+		send(sockfd,pbuf,sizeof(pbuf),0);
+	
+		
+			
+		
 }
 
 void do_staff_query(int sockfd, MSG *pbuf)
 {
-    
+    //在数据库中将此用户的信息放到结构体中
+			pbuf.ret = SUCCESS;
+			send(sockfd,pbuf,sizeof(pbuf),0);
 }
 
 void do_admin_query(int sockfd, MSG *pbuf)
 {
-    
+    //pbuf.INFO == 数据库中查询到的id
+	//将查询到的用户信息放到结构体中
+	pbuf.ret = SUCCESS;
+	send(sockfd,pbuf,sizeof(pbuf),0);
 }
+
 
 void *handler(void * arg)
 {
@@ -84,6 +119,8 @@ int main(int argc, char *argv[])
         printf("fail to sqlite3_open : %s\n", sqlite3_errmsg(db));
         return -1;
     }
+	//创建表
+	sqlite3_exec(db,)
 
     //创建服务器socket
     listenfd = socket(PF_INET, SOCK_STREAM, 0);
