@@ -28,13 +28,6 @@ enum CMD{
 	FAILED              //失败
 };
 
-enum CMD{
-	LOGIN,
-	QUERY,
-	QUIT
-}
-
-
 enum USER_LEVEL{
     STAFF = 100,  //普通员工
     ADMIN  //管理员
