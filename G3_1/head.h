@@ -16,23 +16,23 @@
 
 #define N  64
 typedef struct sockaddr SA;
-
+//各种命令
 enum CMD{
     LOGIN,  //登录
-    STAFF_CHANGE_PASSWD,
-    STAFF_QUERY,
-    ADMIN_ADD_STAFF,
-    ADMIN_DEL_STAFF,
-    ADMIN_QUERY,
-    SUCCESS,
-    FAILED
+    STAFF_CHANGE_PASSWD,//修改密码
+    STAFF_QUERY,        //员工查询
+    ADMIN_ADD_STAFF,    //管理员增加员工
+    ADMIN_DEL_STAFF,    //管理员删除员工
+    ADMIN_QUERY,        //管理员查询
+    QUIT ,            //退出
+    FAILED              //失败
 };
 
 enum USER_LEVEL{
     STAFF = 100,  //普通员工
     ADMIN  //管理员
 };
-
+//员工信息结构体
 typedef struct
 {
     int id;  //员工编号
@@ -41,8 +41,9 @@ typedef struct
     int  age;//年龄
     float salary; //工资
 }INFO;
-
+//所有信息的结构体
 typedef struct{
+	int USER_LEVEL;
     int ret;  //操作结果
     int type;//操作类型
     INFO info;//员工信息结构体

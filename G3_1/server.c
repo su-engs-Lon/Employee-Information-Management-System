@@ -2,108 +2,203 @@
 
 sqlite3 *db = NULL;  //数据库句柄
 
-void do_login(int sockfd, MSG *pbuf)
+void do_login(int socked, MSG *pbuf)
 {
-		char *errmsg;
-		char cmd[64];
-		char **resultp;
-		int pnrow,pncolumn;
-		sprintf(cmd,"selete * from user where name = '%s'",pbuf.name);
-	   //从数据库中取出用户名和从客户端发送过来的用户名进行比较
-	   	if( sqlite3_get_table(db,sql,&resultp,&pnrow,&pncolumn,&errmsg) != SQLITE_OK)
+    char *errmsg;
+    char **resultp;
+	
+    char cmd[256];
+
+    int n_row, n_cloum;
+
+    sprintf(cmd, "select * from usr where name='%s'",pbuf->info.name);
+
+    if (sqlite3_get_table(db, cmd, &resultp, &n_row, &n_cloum, &errmsg) != SQLITE_OK)
+    {
+        printf("err:%s\n", errmsg);
+        exit(EXIT_FAILURE);
+    }
+
+    if(n_row == 0){
+		printf("-------------------------------------------------\n");
+        strcpy(pbuf->data, "username or password err");
+		pbuf->ret=1;
+    }
+	else
+	{
+		if(strcmp(pbuf->passwd,resultp[8])==0)
 		{
-			printf("err:%s\n", errmsg);
-			exit(EXIT_FAILURE);
+			strcpy(pbuf->data,"登入ok");
+			pbuf->ret=0;
+			pbuf->USER_LEVEL = atoi(resultp[7]);
 		}
 		else
 		{
-				if(!strcmp(pbuf.password,result[pncolumn]))
-				{
-					pbuf.ret = SUCCESS;
-					send(sockfd,pbuf,sizeof(pbuf),0);
-				}
-				else
-				{
-					pbuf.ret = FAILED;
-					send(sockfd,pbuf,sizeof(pbuf),0);
-				}
+			strcpy(pbuf->data, "登入err");
+			pbuf->ret=1;
 		}
-		
+    }
+
+    send(socked, pbuf, sizeof(MSG), 0);
 }
 
 void do_staff_change_passwd(int sockfd, MSG *pbuf)
 {
 	char *errmsg;
-	char cmd[64];
-	sprintf(cmd,"update data set passwd = '%s' where name = '%s'",pbuf.passwd,pbuf.name);
-	if( sqlite3_exec(db,cmd,NULL,NULL,&errmsg) == SQLITE_OK)
+	char cmd[256];
+	sprintf(cmd,"update usr set passwd = \"%s\" where name = \"%s\"",pbuf->passwd,pbuf->info.name);
+	// 根据 name 修改数据库内容为 passwd
+    if( sqlite3_exec(db,cmd,NULL,NULL,&errmsg) == SQLITE_OK)
 	{
-		pbuf.ret = SUCCESS;
-		send(sockfd,pbuf,sizeof(pbuf),0);
+		//修改成功 ret = 0，data = “修改密码完成”
+		pbuf->ret = 0;
+		strcpy(pbuf->data,"修改密码完成");
 	}
-	else
+	else 
 	{
-	pbuf.ret = FAILED;
-	send(sockfd,pbuf,sizeof(pbuf),0);	
-	}	
+		//查询失败 ret = 1, data = "修改密码失败“
+		pbuf->ret = 1;
+		strcpy(pbuf->data,"修改密码失败");
+	}
+	send(sockfd,pbuf,sizeof(MSG),0);
 }
 
 void do_staff_query(int sockfd, MSG *pbuf)
 {
+    //查找用户信息
 	char *errmsg;
-	char cmd[64];
-	char **resultp;
-	int pnrow,pncolumn;
-	sprintf(cmd,"selete from data where name = '%s'",pbuf.name);
-    if( sqlite3_get_table(db,cmd,&resultp,&pnrow,&pncolumn,&errmsg) == SQLITE_OK)//如果查询用户成功
+	char **user_msg;
+	char cmd[256];
+	int  n_row,n_cloum;
+	sprintf(cmd,"select * from usr where name = \"%s\"",pbuf->info.name);
+
+    if( sqlite3_get_table(db,cmd,&user_msg,&n_row,&n_cloum,&errmsg) == SQLITE_OK)
 	{
-   //将查询到的用户的信息放到结构体中
-		pbuf.ret = SUCCESS;
-		pbuf->info.id = atoi(resultp[10]);
-		strcpy(pbuf->info.name,resultp[11]);
-		strcpy(pbuf->info.addr,resultp[12]);
-		pbuf->info.age = atoi(resultp[13]);
-		pbuf->info.salary = atof(resultp[14]);
-		
-		send(sockfd,pbuf,sizeof(pbuf),0);
+		//查询成功 ret = 0，查询到的信息保存在user_msg中
+		//数据库顺序： name,passwd,id,trueName,addr,age,salary,level 
+		pbuf->ret = 0;
+		strcpy(pbuf->data,"获得员工信息成功");
+		pbuf->info.id = atoi(user_msg[9]);
+		strcpy(pbuf->info.name,user_msg[10]);
+		strcpy(pbuf->info.addr,user_msg[11]);
+		pbuf->info.age = atoi(user_msg[12]);
+		pbuf->info.salary = atof(user_msg[13]);
 	}
-	else
+	else 
 	{
-		pbuf.ret = FAILED;
-		send(sockfd,pbuf,sizeof(pbuf),0);
+		//查询失败 ret = 1, data = "获得员工信息失败“
+		pbuf->ret = 1;
+		strcpy(pbuf->data,"获得员工信息成失败");
 	}
+    //发送 info
+	send(sockfd,pbuf,sizeof(MSG),0);
 }
 
 void do_admin_query(int sockfd, MSG *pbuf)
 {
-	char *errmsg;
-	char cmd[64];
-	char **resultp;
-	int pnrow,pncolumn;
-    //pbuf.INFO == 数据库中查询到的id
-	//将查询到的用户信息放到结构体中
-	pbuf.ret = SUCCESS;
-	send(sockfd,pbuf,sizeof(pbuf),0);
+
+	    char *errmsg;
+	    char cmd[256];
+	    char **user_msg;
+	    int  nrow,ncolumn;
+		//通过比较名字得到内容
+	    sprintf(cmd,"select * from usr where name = \"%s\"",pbuf->info.name);
+
+        if( sqlite3_get_table(db,cmd,&user_msg,&nrow,&ncolumn,&errmsg) == SQLITE_OK)
+  	    {
+		    //查询成功 ret = 0，查询到的信息保存在user_msg中
+		    //数据库顺序：level,passwd,id,name,addr,age,salary
+		    pbuf->ret = 0;
+		    strcpy(pbuf->data,"获得员工信息成功");
+		    pbuf->info.id = atoi(user_msg[9]);
+		    strcpy(pbuf->info.name,user_msg[10]);
+		    strcpy(pbuf->info.addr,user_msg[11]);
+		    pbuf->info.age = atoi(user_msg[12]);
+		    pbuf->info.salary = atof(user_msg[13]);
+	    }
+	    else 
+	    {
+		    //查询失败 ret = 1, data = "获得员工信息失败“
+		    pbuf->ret = 1;
+		    strcpy(pbuf->data,"获得员工信息失败");
+	    }
+        //发送 info
+	    send(sockfd,pbuf,sizeof(MSG),0);
+    
 }
 
+void do_admin_add(int sockfd, MSG *pbuf)
+{
+	char *errmsg;
+	char cmd[256];
+	char **user_msg;
+	int nrow = 0,ncolumn = 0;
+	   
+	sprintf(cmd,"insert into usr values(\"%d\",\"%s\",\"%d\",\"%s\",\
+					 \"%s\",\"%d\",\"%f\")",pbuf->USER_LEVEL,pbuf->passwd,pbuf->info.id,\
+					 pbuf->info.name,pbuf->info.addr,pbuf->info.age,\
+					 pbuf->info.salary);
+		if(sqlite3_exec(db,cmd,NULL,NULL,&errmsg) == SQLITE_OK)
+		{
+			pbuf->ret = 0;
+			printf("success to add\n");
+			strcpy(pbuf->data,"添加成功了");
+		
+		}else
+		{
+		    pbuf->ret = 1;
+			printf("fail to add");
+			strcpy(pbuf->data,"添加失败了");
+		}
+	
+	send(sockfd,pbuf,sizeof(MSG),0);
+}
+
+void do_admin_del(int sockfd, MSG *pbuf)
+{
+	//查询usr用户 从数据库删
+	char *errmsg;
+	char cmd[256];
+	//通过名字查找内容
+	sprintf(cmd,"delete from usr where name = \"%s\"",pbuf->info.name);
+	//数据库删除操作
+	if( sqlite3_exec(db,cmd,NULL,NULL,&errmsg) == SQLITE_OK)
+	{
+		//删除成功 ret = 0，data = “删除成功”
+		pbuf->ret = 0;
+		strcpy(pbuf->data,"删除成功");
+	}
+	else 
+	{
+		//删除失败 ret = -1, data = "删除失败“
+		pbuf->ret = 1;
+
+		strcpy(pbuf->data,"删除失败");
+	}
+	//将登录的结果反馈给用户端
+	send(sockfd,pbuf,sizeof(MSG),0);
+}
 
 void *handler(void * arg)
 {
      MSG msg;
     int n;
-    int connfd = (int)arg;
+    int connfd;
+	connfd = *(int*)arg;
 
+	printf("进入线程");
     while(1)
     {
         n = recv(connfd, &msg, sizeof(MSG), 0);
-        //printf("name = %s\n", msg.name);
+        printf("name = %s\n", msg.info.name);
         if(n == 0){  //客户端退出
             pthread_exit(NULL);
             close(connfd);
         }else if(n > 0){  //收到信息
-            //printf("recv type = %d\n", msg.type);
+            printf("recv type = %d\n", msg.type);
             switch (msg.type) {
             case LOGIN:  //登录
+
                 do_login(connfd, &msg);
                 break;
             case STAFF_CHANGE_PASSWD:
@@ -112,14 +207,18 @@ void *handler(void * arg)
             case STAFF_QUERY:
                 do_staff_query(connfd, &msg);
                 break;
-            case ADMIN_QUERY:
+            case ADMIN_QUERY:				
                 do_admin_query(connfd, &msg);
                 break;
             case ADMIN_DEL_STAFF:
-//                do_admin_del(connfd, &msg);
+				printf("进入减少前");
+              do_admin_del(connfd, &msg);
                 break;
             case ADMIN_ADD_STAFF:
-//                do_admin_add(connfd, &msg);
+				
+				printf("进入add前");
+              do_admin_add(connfd, &msg);
+			  printf("进入del后");
                 break;
             default:
                 break;
@@ -133,10 +232,25 @@ void *handler(void * arg)
     pthread_exit(NULL);
 }
 
+void data_base_init()
+{
+	//初始化数据库
+	char *errmsg;
+    int no;
+    char name[64];
+
+	char sql[256] = {"create table usr(level int,passwd text,id int,name text,addr text ,age int,salary float);"};
+	sqlite3_exec(db,sql,NULL,NULL,&errmsg);
+	sqlite3_exec(db,"insert into usr values(101,'bat',1000,'Tony','济南',18,8000);",NULL,NULL,&errmsg);
+	
+}
+
 int main(int argc, char *argv[])
 {
     int listenfd, connfd;
     struct sockaddr_in myaddr;
+	void*ret;
+	pthread_t tid;
 
     if (argc < 3)
     {
@@ -149,9 +263,8 @@ int main(int argc, char *argv[])
         printf("fail to sqlite3_open : %s\n", sqlite3_errmsg(db));
         return -1;
     }
-	//创建表
-	sqlite3_exec(db,)
-
+	
+     data_base_init();
     //创建服务器socket
     listenfd = socket(PF_INET, SOCK_STREAM, 0);
     if(listenfd < 0){
@@ -167,10 +280,24 @@ int main(int argc, char *argv[])
         perror("fail to bind");
         exit(-1);
     }
-
-    // XXX int listen(int sockfd, int backlog);
-
-    //接受客户端请求，创建子线程
-	
-
+	// XXX int listen(int sockfd, int backlog);
+	if (listen(listenfd, 5) < 0)
+    {
+        perror("fail to listen");
+        exit(-1);
+	}
+	//接受客户端请求，创建子线程
+	while(1){
+		if((connfd = accept(listenfd, NULL, NULL)) < 0){
+			perror("fail to accept");
+			exit(-1);
+		}
+		if(pthread_create(&tid, NULL, handler, &connfd) != 0)
+		{
+			perror("fail to create");
+			exit(1);
+		}
+	}
+	//pthread_join(tid,NULL);
+	//	pthread_join(tid, &ret);
 }
