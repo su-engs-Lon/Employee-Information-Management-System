@@ -1,0 +1,13 @@
+G3员工信息管理系统项目说明：
+一.分组
+	group1：孟凡成  杨晓燕  彭建强
+	group2：王义国  白亚宽  苗欣农
+
+二：组内分工
+	group1：	server.c：
+				孟凡成  彭建强
+			client.c: 杨晓燕
+	group2：	server.c：
+				王义国：
+				苗欣农：
+			client.c:白亚宽

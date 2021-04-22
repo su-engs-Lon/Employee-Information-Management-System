@@ -4,52 +4,82 @@ sqlite3 *db = NULL;  //数据库句柄
 
 void do_login(int sockfd, MSG *pbuf)
 {
-	while(1)
-	{
-		recv(sockfd,pbuf,sizeof(pbuf),0);     //从数据库中取出用户名和从客户端发送过来的用户名进行比较
-		if(pbuf.name == ？？？)               //如果可以从数据库中查找到用户名 则进行下一步的passwd的比较
+		char *errmsg;
+		char cmd[64];
+		char **resultp;
+		int pnrow,pncolumn;
+		sprintf(cmd,"selete * from user where name = '%s'",pbuf.name);
+	   //从数据库中取出用户名和从客户端发送过来的用户名进行比较
+	   	if( sqlite3_get_table(db,sql,&resultp,&pnrow,&pncolumn,&errmsg) != SQLITE_OK)
 		{
-			if(pbuf.passwd ==  ????)				//判断用户名和密码是否匹配
-			{
-				pbuf.ret = SUCCESS;
-				send(sockfd,pbuf,sizeof(pbuf),0);
-			}
-			else
-			{
-				pbuf.ret = FAILED;
-				send(sockfd,pbuf,sizeof(pbuf),0);
-			}
+			printf("err:%s\n", errmsg);
+			exit(EXIT_FAILURE);
 		}
 		else
 		{
-			msg.ret = FAILED;			//如果查询用户失败，则返回FAILED
-			send(sockfd,pbuf,sizeof(pbuf),0);
+				if(!strcmp(pbuf.password,result[pncolumn]))
+				{
+					pbuf.ret = SUCCESS;
+					send(sockfd,pbuf,sizeof(pbuf),0);
+				}
+				else
+				{
+					pbuf.ret = FAILED;
+					send(sockfd,pbuf,sizeof(pbuf),0);
+				}
 		}
-	}
+		
 }
 
 void do_staff_change_passwd(int sockfd, MSG *pbuf)
 {
-	
-		//	pubf.name == name;找到此用户登录的账号
-		//	在数据库中将这个用户的密码更改
+	char *errmsg;
+	char cmd[64];
+	sprintf(cmd,"update data set passwd = '%s' where name = '%s'",pbuf.passwd,pbuf.name);
+	if( sqlite3_exec(db,cmd,NULL,NULL,&errmsg) == SQLITE_OK)
+	{
 		pbuf.ret = SUCCESS;
 		send(sockfd,pbuf,sizeof(pbuf),0);
-	
-		
-			
-		
+	}
+	else
+	{
+	pbuf.ret = FAILED;
+	send(sockfd,pbuf,sizeof(pbuf),0);	
+	}	
 }
 
 void do_staff_query(int sockfd, MSG *pbuf)
 {
-    //在数据库中将此用户的信息放到结构体中
-			pbuf.ret = SUCCESS;
-			send(sockfd,pbuf,sizeof(pbuf),0);
+	char *errmsg;
+	char cmd[64];
+	char **resultp;
+	int pnrow,pncolumn;
+	sprintf(cmd,"selete from data where name = '%s'",pbuf.name);
+    if( sqlite3_get_table(db,cmd,&resultp,&pnrow,&pncolumn,&errmsg) == SQLITE_OK)//如果查询用户成功
+	{
+   //将查询到的用户的信息放到结构体中
+		pbuf.ret = SUCCESS;
+		pbuf->info.id = atoi(resultp[10]);
+		strcpy(pbuf->info.name,resultp[11]);
+		strcpy(pbuf->info.addr,resultp[12]);
+		pbuf->info.age = atoi(resultp[13]);
+		pbuf->info.salary = atof(resultp[14]);
+		
+		send(sockfd,pbuf,sizeof(pbuf),0);
+	}
+	else
+	{
+		pbuf.ret = FAILED;
+		send(sockfd,pbuf,sizeof(pbuf),0);
+	}
 }
 
 void do_admin_query(int sockfd, MSG *pbuf)
 {
+	char *errmsg;
+	char cmd[64];
+	char **resultp;
+	int pnrow,pncolumn;
     //pbuf.INFO == 数据库中查询到的id
 	//将查询到的用户信息放到结构体中
 	pbuf.ret = SUCCESS;
@@ -141,5 +171,6 @@ int main(int argc, char *argv[])
     // XXX int listen(int sockfd, int backlog);
 
     //接受客户端请求，创建子线程
+	
 
 }

@@ -24,7 +24,7 @@ int do_login(int sockfd, MSG *pbuf)
 		   else if(pbuf.ret == 1)
 		   {
 			   puts(login success!\n);
-			   break;
+			   return 1;
 		   }
 		} 
 		else
@@ -97,10 +97,10 @@ int do_admin(int sockfd, MSG *pbuf)
 	while(1)
 	{
 	printf("--------you are admin----------\n");
-	printf("-----   1.ADMIN_QUERY     -----\n");
-/*	printf("-----  2.ADMIN_ADD_STAFF  -----\n");
-	printf("-----  3.ADMIN_DEL_STAFF  -----\n");*/
-	printf("-----  2.STAFF_EXIT       -----\n");
+	printf("-----  1.ADMIN_QUERY     -----\n");
+	printf("-----  2.ADMIN_ADD_STAFF  -----\n");
+	printf("-----  3.ADMIN_DEL_STAFF  -----\n");
+	printf("-----  4.ADMIN_EXIT       -----\n");
 
 	printf("please choose your operating:");
 	scanf("%d",&option);
@@ -108,7 +108,7 @@ int do_admin(int sockfd, MSG *pbuf)
 	{
 		case 1:
 				printf(please input query id:);
-				fgets(pbuf.INFO.id,N,stdin);
+				fgets(pbuf.info.id,N,stdin);
 				pbuf.type = ADMIN_QUERY;
 				send(sockfd,pbuf,sizeof(pbuf),0);
 				recv(sockfd,pbuf,sizeof(pbuf),0);
@@ -123,23 +123,47 @@ int do_admin(int sockfd, MSG *pbuf)
 					continue;
 				}
 				break;
-/*		case 2:printf("please input query id:");
+		case 2:printf("please input user information:");
+			   puts("passwd = ");
+			   scanf("%d",pbuf.passwd);
+			   puts("id = ");
 			   scanf("%d",pbuf.info.id);
-			   pbuf.type = STAFF_QUERY;
+			   puts("name = ");
+			   scanf("%s",pbuf.info.name);
+			   puts("addr = ");
+			   scanf("%s",pbuf.info.addr);
+			   puts("age = ");
+			   scanf("%d",pbuf.info.age);
+			   puts("salary = ");
+			   scanf("%f",pbuf.info.salary);
+			   pbuf.type = ADMIN_ADD_STAFF;
 			   send(sockfd,pbuf,sizeof(pbuf),0);
 			   recv(sockfd,pbuf,sizeof(pbuf),0);
 			   if(pbuf.ret == SUCCESS)
 			   {
-			   printf("id = %d,name = %s,addr = %s,age = %d,salary = %.1f\n",pbuf.id,pbuf.name,pbuf.addr,pbuf.age,pbuf.salary);
+				   printf("add user success!\n");
 			   }
 			   else
 			   {
-				   printf("query is failed\n");
+				   printf("add user failed!\n");
 			   }
 			   break;
-			   */
+		case 3:printf("please input delete id:");
+			   scanf("%d",pbuf.info.id);
+			   pbuf.type = ADMIN_DEL_STAFF;
+			   send(sockfd,pbuf,sizeof(pbuf),0);
+			   recv(sockfd,pbuf,sizeof(pbuf),0);
+			   if(pbuf.ret == SUCCESS)
+			   {
+			   printf("delete user success!\n");
+			   }
+			   else
+			   {
+				   printf("delete user failed!\n");
+			   }
+			   break;
 		
-		case 2:
+		case 4:
 				break;
 				
 	}
@@ -178,11 +202,17 @@ int main(int argc, char *argv[])
         perror("connect err");
         exit(-1);
     }
-	switch(buf.type)
+	
+	printf("----welcome to employee management system----");
+	printf("---------------please login!-----------------");
+	do_login(sockfd,buf);
+	if(buf.info.id < 10)
 	{
-		case LOGIN:
-		            do_login(sockfd,buf);
-		case 
-		
+		do_admin(sockfd,buf);
 	}
+	else
+	{
+		do_stuff(sockfd,buf);
+	}
+	return 0;
 }
