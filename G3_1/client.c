@@ -4,215 +4,219 @@ int do_login(int sockfd, MSG *pbuf)
 {
 	while(1)
 	{
-    puts("please input your name: ");         //让用户输入用户名和密码
-	fgets(buf.name,N,stdin);
-	puts("please input your passwd\n");
-	fgets(buf.passwd,N,stdin);
-	send(sockfd,pbuf,sizeof(pbuf),0);         //发送用户名密码给服务端，让服务端判断用户名密码是否匹配    
-	nbytes = recv(sockfd, pbuf, sizeof(pbuf), 0);         //接收服务端发送来的ret
-        if(nbytes < 0){
-            perror("recv err");
-            exit(-1);
-        }
-		else if (nbytes > 0)
+		puts("please input your name");
+
+		scanf("%s",pbuf->info.name);
+		puts("please input your passwd");
+		scanf("%s",pbuf->passwd);
+		pbuf->type=LOGIN;
+		send(sockfd, pbuf, sizeof(MSG), 0);
+		recv(sockfd, pbuf,sizeof(MSG), 0);
+		puts(pbuf->data);
+
+		if(pbuf->ret)//ret==1代表操作结果错误
 		{
-           if(pbuf.ret == 0)                  //判断ret是0 or 1 如果是0,则不匹配；反之，显示登录成功
-		   {
-			   puts("name and passwd does not match");
-			   continue;
-		   }
-		   else if(pbuf.ret == 1)
-		   {
-			   puts(login success!\n);
-			   return 1;
-		   }
-		} 
+			puts("登入失败，继续登入输入y,退出输入n");
+			char c;
+			getchar();
+			scanf("%c",&c);
+			if(c=='y')
+				continue;
+			else
+				exit(0);
+		}
 		else
+			break;
+	} 
+	return pbuf->USER_LEVEL;
+}
+//增加员工的函数
+void do_add_stuff(int sockfd,MSG *pbuf)
+{
+	puts("please input stuff id");
+	scanf("%d",&pbuf->info.id);
+	puts("please input stuff name");
+	getchar();
+	gets(pbuf->info.name);
+	puts("please input stuff addr");
+	// getchar();
+	gets(pbuf->info.addr);
+	puts("please input stuff age");
+	scanf("%d",&pbuf->info.age);
+	puts("please input stuff salary");
+	scanf("%d",&pbuf->info.salary);
+
+	puts("please input stuff USER_LEVEL");
+	scanf("%d",&pbuf->USER_LEVEL);
+	puts("please input stuff passwd");
+	getchar();
+	gets(pbuf->passwd);                                                                                         
+	printf("员工信息为:%d,%s,%s,%d,%d\n",pbuf->info.id,pbuf->info.name,pbuf->info.addr,pbuf->info.age,pbuf->info.salary); 
+	pbuf->type=ADMIN_ADD_STAFF;
+
+	send(sockfd, pbuf, sizeof(MSG), 0);
+	recv(sockfd, pbuf,sizeof(MSG), 0);
+	puts(pbuf->data);
+}
+//减少员工的函数
+void do_del_stuff(int sockfd,MSG *pbuf)
+{
+	puts("please input stuff name");
+	getchar();
+	gets(pbuf->info.name);
+
+	pbuf->type=ADMIN_DEL_STAFF;
+
+	send(sockfd, pbuf, sizeof(MSG), 0);
+	recv(sockfd, pbuf,sizeof(MSG), 0);
+	puts(pbuf->data);
+}
+//管理员查询的函数
+void do_query_admin(int sockfd,MSG *pbuf)
+{
+	puts("please input stuff name");
+	getchar();
+	gets(pbuf->info.name);
+
+	pbuf->type=ADMIN_QUERY;
+
+	send(sockfd, pbuf,sizeof(MSG), 0);
+	recv(sockfd, pbuf,sizeof(MSG), 0);
+	puts(pbuf->data);
+
+	if(pbuf->ret==0)
+	printf("员工信息为:%d,%s,%s,%d,%d\n",pbuf->info.id,pbuf->info.name,pbuf->info.addr,pbuf->info.age,pbuf->info.salary); 
+}
+void do_admin(int sockfd, MSG *pbuf)
+{ 
+	while(1)
+	{
+		printf("-----------------------\n");
+		printf("3-增加员工  ");                          //管理员增加员工
+		printf("4-删除员工\n");                          //管理员删除员工
+		printf("5-查询      ");                              //管理员查询
+		printf("6-退出\n");                                      //退出
+		printf("请选择操作项:");
+		// gets(pbuf->type);
+		scanf("%d",&pbuf->type);
+		switch(pbuf->type)
 		{
-            printf("peer exit\n");
-            break;
-        }
-	}
-	
-		
-}
-	
-
-void do_stuff(int sockfd, MSG *pbuf)
-{
-	int option;
-	while(1)
-	{
-	printf("--------you are stuff----------\n");
-	printf("-----1.STAFF_CHANGE_PASSWD-----\n");
-	printf("-----2.STAFF_QUERY        -----\n");
-	printf("-----3.STAFF_EXIT         -----\n");
-	printf("please choose your operating:");
-	scanf("%d",&option);
-	switch(option)
-	{
-		case 1:
-				printf(please input your new passwd:);
-				fgets(pbuf.passwd,N,stdin);
-				pbuf.type = STAFF_CHANGE_PASSWD;
-				send(sockfd,pbuf,sizeof(pbuf),0);
-				recv(sockfd,pbuf,sizeof(pbuf),0);
-				if(pbuf.ret == SUCCESS)
-				{
-					printf("operate success!\n");
-					continue;
-				}
-				else
-				{
-					puts("operate failed!\n");
-					continue;
-				}
-				break;
-		case 2:printf("please input query id:");
-			   scanf("%d",pbuf.info.id);
-			   pbuf.type = STAFF_QUERY;
-			   send(sockfd,pbuf,sizeof(pbuf),0);
-			   recv(sockfd,pbuf,sizeof(pbuf),0);
-			   if(pbuf.ret == SUCCESS)
-			   {
-			   printf("id = %d,name = %s,addr = %s,age = %d,salary = %.1f\n",pbuf.id,pbuf.name,pbuf.addr,pbuf.age,pbuf.salary);
-			   }
-			   else
-			   {
-				   printf("query is failed\n");
-			   }
-			   break;
-		
-		case 3:
-				break;
-				
-	}
-	break;
+		case ADMIN_ADD_STAFF :
+			//增加员工的函数
+			do_add_stuff(sockfd,pbuf);
+			break;
+		case ADMIN_DEL_STAFF :
+			//减少员工的函数
+			do_del_stuff(sockfd,pbuf);
+			break;
+		case ADMIN_QUERY :
+			//管理员查询的函数
+			do_query_admin(sockfd,pbuf);
+			break;
+		case QUIT :
+			close(sockfd);
+			exit (0);
+		}
 	}
 }
-
-int do_admin(int sockfd, MSG *pbuf)
+//员工改密码的函数
+void staff_change_passwd(int sockfd,MSG *pbuf)
 {
-    int option;
-	while(1)
-	{
-	printf("--------you are admin----------\n");
-	printf("-----  1.ADMIN_QUERY     -----\n");
-	printf("-----  2.ADMIN_ADD_STAFF  -----\n");
-	printf("-----  3.ADMIN_DEL_STAFF  -----\n");
-	printf("-----  4.ADMIN_EXIT       -----\n");
+	//puts("please input your name");
+	//getchar();
+	//gets(pbuf->info.name);
+	puts("please input new password");
+	getchar();
+	gets(pbuf->passwd);
+	pbuf->type=STAFF_CHANGE_PASSWD;
 
-	printf("please choose your operating:");
-	scanf("%d",&option);
-	switch(option)
-	{
-		case 1:
-				printf(please input query id:);
-				fgets(pbuf.info.id,N,stdin);
-				pbuf.type = ADMIN_QUERY;
-				send(sockfd,pbuf,sizeof(pbuf),0);
-				recv(sockfd,pbuf,sizeof(pbuf),0);
-				if(pbuf.ret == SUCCESS)
-				{
-					printf("id = %d,name = %s,addr = %s,age = %d,salary = %.1f\n",pbuf.INFO.id,pbuf.INFO.name,pbuf.INFO.addr,pbuf.INFO.age,pbuf.INFO.salary);
-					continue;
-				}
-				else
-				{
-					puts("operate failed!\n");
-					continue;
-				}
-				break;
-		case 2:printf("please input user information:");
-			   puts("passwd = ");
-			   scanf("%d",pbuf.passwd);
-			   puts("id = ");
-			   scanf("%d",pbuf.info.id);
-			   puts("name = ");
-			   scanf("%s",pbuf.info.name);
-			   puts("addr = ");
-			   scanf("%s",pbuf.info.addr);
-			   puts("age = ");
-			   scanf("%d",pbuf.info.age);
-			   puts("salary = ");
-			   scanf("%f",pbuf.info.salary);
-			   pbuf.type = ADMIN_ADD_STAFF;
-			   send(sockfd,pbuf,sizeof(pbuf),0);
-			   recv(sockfd,pbuf,sizeof(pbuf),0);
-			   if(pbuf.ret == SUCCESS)
-			   {
-				   printf("add user success!\n");
-			   }
-			   else
-			   {
-				   printf("add user failed!\n");
-			   }
-			   break;
-		case 3:printf("please input delete id:");
-			   scanf("%d",pbuf.info.id);
-			   pbuf.type = ADMIN_DEL_STAFF;
-			   send(sockfd,pbuf,sizeof(pbuf),0);
-			   recv(sockfd,pbuf,sizeof(pbuf),0);
-			   if(pbuf.ret == SUCCESS)
-			   {
-			   printf("delete user success!\n");
-			   }
-			   else
-			   {
-				   printf("delete user failed!\n");
-			   }
-			   break;
-		
-		case 4:
-				break;
-				
-	}
-	break;
-	}
+	send(sockfd, pbuf, sizeof(MSG), 0);
+	recv(sockfd, pbuf,sizeof(MSG), 0);
+	puts(pbuf->data);
+}
+//员工查询
+void do_query_stuff(int sockfd,MSG *pbuf)
+{
+	pbuf->type=STAFF_QUERY;
+	send(sockfd, pbuf, sizeof(MSG), 0);
+	recv(sockfd, pbuf,sizeof(MSG), 0);
+	puts(pbuf->data);
+	printf("员工信息为:%d,%s,%s,%d,%d\n",pbuf->info.id,pbuf->info.name,pbuf->info.addr,pbuf->info.age,pbuf->info.salary); 
+}
+
+int do_stuff(int sockfd, MSG *pbuf)
+{
+	while(1)
+	{ 
+		puts("please input a number represent a common");
+		puts("1-STAFF_CHANGE_PASSWD");                    //修改密码
+		puts("2-STAFF_QUERY");                            //员工查询
+		puts("6-QUIT");                                   //退出  	
+
+		//gets(pbuf->type);
+		scanf("%d",&pbuf->type);
+		switch(pbuf->type)
+		{
+		case STAFF_CHANGE_PASSWD :
+			//员工改密码的函数
+			staff_change_passwd(sockfd,pbuf);
+			break;
+		case STAFF_QUERY :
+			//员工查询
+			do_query_stuff(sockfd,pbuf);
+			break;
+		case QUIT :
+			close(sockfd);
+			exit (0);
+		}
+	}		
 }
 
 int main(int argc, char *argv[])
 {
-    int sockfd, ret;
-    struct sockaddr_in servaddr;
-    MSG buf;
-    char clean[64];
+	int sockfd, ret;
+	struct sockaddr_in servaddr;
+	MSG buf;
+	int addrlen = sizeof(struct sockaddr);
+	char clean[64];
+	pid_t pid;
 
-    if (argc < 3)
-    {
-        printf("Usage : %s <serv_ip> <serv_port>\n", argv[0]);
-        exit(-1);
-    }
-
-    //创建客户端socket
-    if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        perror("fail to socket");
-        exit(-1);
-    }
-
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = PF_INET;
-    servaddr.sin_port = htons(atoi(argv[2]));
-    servaddr.sin_addr.s_addr = inet_addr(argv[1]);
-
-    //连接服务器
-
-	if(connect(sockfd, (struct sockaddr *)&serveraddr, addrlen) < 0){
-        perror("connect err");
-        exit(-1);
-    }
-	
-	printf("----welcome to employee management system----");
-	printf("---------------please login!-----------------");
-	do_login(sockfd,buf);
-	if(buf.info.id < 10)
+	if (argc < 3)
 	{
-		do_admin(sockfd,buf);
+		printf("Usage : %s <serv_ip> <serv_port>\n", argv[0]);
+		exit(-1);
 	}
-	else
+
+	//创建客户端socket
+	if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) < 0)
 	{
-		do_stuff(sockfd,buf);
+		perror("fail to socket");
+		exit(-1);
 	}
+
+	bzero(&servaddr, sizeof(servaddr));
+	servaddr.sin_family = PF_INET;
+	servaddr.sin_port = htons(atoi(argv[2]));
+	servaddr.sin_addr.s_addr = inet_addr(argv[1]);
+
+	//连接服务器
+	if(connect(sockfd, (struct sockaddr *)&servaddr, addrlen) < 0){
+		perror("connect err");
+		exit(-1);
+	}
+
+	ret=do_login(sockfd,&buf);
+
+	switch(ret){
+	case STAFF://代表普通员工
+		do_stuff(sockfd, &buf);
+		break;
+
+	case ADMIN://代表管理员
+		do_admin(sockfd, &buf);
+		break;						
+	}
+	close(sockfd);
 	return 0;
+
 }
