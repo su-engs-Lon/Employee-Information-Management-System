@@ -5,6 +5,7 @@ int do_login(int sockfd, MSG *pbuf)
 	while(1)
 	{
 		puts("please input your name");
+<<<<<<< HEAD
 
 		scanf("%s",pbuf->info.name);
 		puts("please input your passwd");
@@ -17,6 +18,26 @@ int do_login(int sockfd, MSG *pbuf)
 		if(pbuf->ret)//ret==1代表操作结果错误
 		{
 			puts("fail to login，continue to login input y,exit input n");
+=======
+		
+	    scanf("%s",pbuf->info.name);
+	    puts("please input your passwd");
+	    scanf("%s",pbuf->passwd);
+		printf("输入密码之后\n");
+	    pbuf->type=LOGIN;
+		printf("发送之前\n");
+		send(sockfd, pbuf, sizeof(MSG), 0);
+		//send(sockfd, pbuf, sizeof(MSG), 0);
+		printf("发送之后接收之前\n");
+		recv(sockfd, pbuf,sizeof(MSG), 0);
+		//recv(sockfd, pbuf,sizeof(MSG), 0);
+		printf("接收之后\n");
+		puts(pbuf->data);
+		
+		if(pbuf->ret)//ret==1代表操作结果错误
+		{
+		    puts("登入失败，继续登入输入y,退出输入n");
+>>>>>>> 06f5ad168a34efa431e2b5b0b26bffa538fb72b7
 			char c;
 			getchar();
 			scanf("%c",&c);
@@ -31,6 +52,7 @@ int do_login(int sockfd, MSG *pbuf)
 	return pbuf->USER_LEVEL;
 }
 //增加员工的函数
+<<<<<<< HEAD
 void do_add_stuff(int sockfd,MSG *pbuf)
 {
 	puts("please input stuff id");
@@ -156,6 +178,132 @@ int do_stuff(int sockfd, MSG *pbuf)
 
 		//gets(pbuf->type);
 		scanf("%d",&pbuf->type);
+=======
+ void do_add_stuff(int sockfd,MSG *pbuf)
+ {
+	 puts("please input stuff id");
+	 scanf("%d",&pbuf->info.id);
+	 puts("please input stuff name");
+	 getchar();
+	 gets(pbuf->info.name);
+	 puts("please input stuff addr");
+	 getchar();
+	 gets(pbuf->info.addr);
+	 puts("please input stuff age");
+	 scanf("%d",&pbuf->info.age);
+	 puts("please input stuff salary");
+	 scanf("%f",&pbuf->info.salary);
+	 
+	 puts("please input stuff USER_LEVEL");
+	 scanf("%d",&pbuf->USER_LEVEL);
+	 puts("please input stuff passwd");
+	 getchar();
+	 gets(pbuf->passwd);                                                                                         
+	printf("员工信息为:%d,%s,%s,%d,%f\n",pbuf->info.id,pbuf->info.name,pbuf->info.addr,pbuf->info.age,pbuf->info.salary); 
+	 pbuf->type=ADMIN_ADD_STAFF;
+	 
+	 send(sockfd, pbuf, sizeof(MSG), 0);
+	recv(sockfd, pbuf,sizeof(MSG), 0);
+	puts(pbuf->data);
+ }
+ //减少员工的函数
+ void do_del_stuff(int sockfd,MSG *pbuf)
+ {
+	 puts("please input stuff name");
+	 getchar();
+	 gets(pbuf->info.name);
+	 
+	 pbuf->type=ADMIN_DEL_STAFF;
+	 
+	 send(sockfd, pbuf, sizeof(MSG), 0);
+	recv(sockfd, pbuf,sizeof(MSG), 0);
+	puts(pbuf->data);
+ }
+ //管理员查询的函数
+ void do_query_admin(int sockfd,MSG *pbuf)
+ {
+	 puts("please input stuff name");
+	 getchar();
+	 gets(pbuf->info.name);
+	 
+	 pbuf->type=ADMIN_QUERY;
+	 
+	 send(sockfd, pbuf, sizeof(MSG), 0);
+	recv(sockfd, pbuf,sizeof(MSG), 0);
+	puts(pbuf->data);
+	                                                                                                             
+	printf("员工信息为:%d,%s,%s,%d,%6.1f\n",pbuf->info.id,pbuf->info.name,pbuf->info.addr,pbuf->info.age,pbuf->info.salary); 
+ }
+void do_admin(int sockfd, MSG *pbuf)
+{   while(1)
+    {
+        puts("please input a number represent a common");
+	    puts("3-ADMIN_ADD_STAFF");                          //管理员增加员工
+        puts("4-ADMIN_DEL_STAFF");                          //管理员删除员工
+        puts("5-ADMIN_QUERY");                              //管理员查询
+		puts("6-QUIT");                                      //退出
+	   // gets(pbuf->type);
+	   scanf("%d",&pbuf->type);
+		switch(pbuf->type)
+		{
+			case ADMIN_ADD_STAFF :
+			//增加员工的函数
+			do_add_stuff(sockfd,pbuf);
+			break;
+			case ADMIN_DEL_STAFF :
+			//减少员工的函数
+			do_del_stuff(sockfd,pbuf);
+			break;
+			case ADMIN_QUERY :
+			//管理员查询的函数
+			do_query_admin(sockfd,pbuf);
+			break;
+			case QUIT :
+			close(sockfd);
+			exit (0);
+		}	
+		
+	}
+	
+	
+}
+//员工改密码的函数
+void staff_change_passwd(int sockfd,MSG *pbuf)
+ {
+	 //puts("please input your name");
+	 //getchar();
+	 //gets(pbuf->info.name);
+	 puts("please input new password");
+	 getchar();
+	 gets(pbuf->passwd);
+	 pbuf->type=STAFF_CHANGE_PASSWD;
+	 
+	 send(sockfd, pbuf, sizeof(MSG), 0);
+	recv(sockfd, pbuf,sizeof(MSG), 0);
+	puts(pbuf->data);
+ }
+ //员工查询
+ void do_query_stuff(int sockfd,MSG *pbuf)
+ {
+	 pbuf->type=STAFF_QUERY;
+	 send(sockfd, pbuf, sizeof(MSG), 0);
+	recv(sockfd, pbuf,sizeof(MSG), 0);
+	puts(pbuf->data);
+	printf("员工信息为:%d,%s,%s,%d,%6.1f\n",pbuf->info.id,pbuf->info.name,pbuf->info.addr,pbuf->info.age,pbuf->info.salary); 
+ }
+
+int do_stuff(int sockfd, MSG *pbuf)
+{
+ while(1)
+  { 
+    puts("please input a number represent a common");
+    puts("1-STAFF_CHANGE_PASSWD");                    //修改密码
+    puts("2-STAFF_QUERY");                            //员工查询
+	puts("6-QUIT");                                   //退出  	
+	
+	//gets(pbuf->type);
+	scanf("%d",&pbuf->type);
+>>>>>>> 06f5ad168a34efa431e2b5b0b26bffa538fb72b7
 		switch(pbuf->type)
 		{
 		case STAFF_CHANGE_PASSWD :
@@ -166,15 +314,24 @@ int do_stuff(int sockfd, MSG *pbuf)
 			//员工查询
 			do_query_stuff(sockfd,pbuf);
 			break;
+<<<<<<< HEAD
 		case QUIT :
 			close(sockfd);
 			exit (0);
 		}
 	}		
+=======
+			case QUIT :
+			close(sockfd);
+			exit (0);
+		}
+  }		
+>>>>>>> 06f5ad168a34efa431e2b5b0b26bffa538fb72b7
 }
 
 int main(int argc, char *argv[])
 {
+<<<<<<< HEAD
 	int sockfd, ret;
 	struct sockaddr_in servaddr;
 	MSG buf;
@@ -217,6 +374,50 @@ int main(int argc, char *argv[])
 		do_admin(sockfd, &buf);
 		break;						
 	}
+=======
+    int sockfd, ret;
+    struct sockaddr_in servaddr;
+    MSG buf;
+	int addrlen = sizeof(struct sockaddr);
+    char clean[64];
+	pid_t pid;
+
+    if (argc < 3)
+    {
+        printf("Usage : %s <serv_ip> <serv_port>\n", argv[0]);
+        exit(-1);
+    }
+
+    //创建客户端socket
+    if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        perror("fail to socket");
+        exit(-1);
+    }
+
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = PF_INET;
+    servaddr.sin_port = htons(atoi(argv[2]));
+    servaddr.sin_addr.s_addr = inet_addr(argv[1]);
+
+    //连接服务器
+	if(connect(sockfd, (struct sockaddr *)&servaddr, addrlen) < 0){
+        perror("connect err");
+        exit(-1);
+    }
+	
+	ret=do_login(sockfd,&buf);
+	
+	switch(ret){
+		case STAFF://代表普通员工
+		do_stuff(sockfd, &buf);
+		break;
+		
+		case ADMIN://代表管理员
+		do_admin(sockfd, &buf);
+		break;						
+	}
+>>>>>>> 06f5ad168a34efa431e2b5b0b26bffa538fb72b7
 	close(sockfd);
 	return 0;
 

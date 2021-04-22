@@ -8,6 +8,7 @@
 #include <sqlite3.h>
 #include <signal.h>
 #include <time.h>
+#include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
